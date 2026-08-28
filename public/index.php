@@ -37,7 +37,7 @@
                         <a href="#" class="mn-nav-link">History</a>
                     </li>
                     <li class="nav-item">
-                        <a href="#" class="mn-nav-link">Academic Periods</a>
+                        <a href="academic-periods/academic_periods.php" class="mn-nav-link">Academic Periods</a>
                     </li>
                     <li class="nav-item">
                         <a href="#" class="mn-nav-link">Reports</a>
