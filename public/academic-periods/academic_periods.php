@@ -4,22 +4,51 @@ session_start();
 
 require '../../app/database/database.php';
 
+$form_error = '';
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['create_period'])) {
     $name = trim($_POST['name'] ?? '');
     $start_date = $_POST['start_date'] ?? '';
     $end_date = $_POST['end_date'] ?? '';
+    $start_date_object = DateTime::createFromFormat('!Y-m-d', $start_date);
+    $end_date_object = DateTime::createFromFormat('!Y-m-d', $end_date);
 
-    if ($name !== '' && $start_date !== '' && $end_date !== '') {
+    if ($name === '' || !$start_date_object || !$end_date_object) {
+        $form_error = 'Please enter a name and valid dates.';
+    } elseif ($start_date_object > $end_date_object) {
+        $form_error = 'The start date must be before the end date.';
+    } else {
         $user_id = $_SESSION['user_id'] ?? 1;
-        $insert_stmt = $pdo->prepare("
-            INSERT INTO academic_period (user_id, name, status, start_date, end_date)
-            VALUES (?, ?, 'NOT_STARTED', ?, ?)
-        ");
+        $duplicate_stmt = $pdo->prepare('SELECT 1 FROM academic_period WHERE name = ? LIMIT 1');
+        $duplicate_stmt->execute([$name]);
 
-        $insert_stmt->execute([$user_id, $name, $start_date, $end_date]);
+        if ($duplicate_stmt->fetchColumn()) {
+            $form_error = 'An academic period with this name already exists.';
+        } else {
+            $today = new DateTime('today');
+            $status = $today < $start_date_object
+                ? 'NOT_STARTED'
+                : ($today > $end_date_object ? 'FINISHED' : 'IN_PROGRESS');
+            $insert_stmt = $pdo->prepare("
+                INSERT INTO academic_period (user_id, name, status, start_date, end_date)
+                VALUES (?, ?, ?, ?, ?)
+            ");
 
-        header('Location: academic_periods.php');
-        exit;
+            try {
+                $insert_stmt->execute([$user_id, $name, $status, $start_date, $end_date]);
+            } catch (PDOException $exception) {
+                if ($exception->errorInfo[1] === 1062) {
+                    $form_error = 'An academic period with this name already exists.';
+                } else {
+                    throw $exception;
+                }
+            }
+
+            if ($form_error === '') {
+                header('Location: academic_periods.php');
+                exit;
+            }
+        }
     }
 }
 
@@ -353,7 +382,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_period'])) {
             <div class="row g-4">
                 <?php foreach ($periods as $period): ?>
                     <?php
-                    $is_open = ($period['status'] === 'IN_PROGRESS');
+                    $today = new DateTime('today');
+                    $period_start = new DateTime($period['start_date']);
+                    $period_end = new DateTime($period['end_date']);
+                    $period_status = $today < $period_start
+                        ? 'NOT_STARTED'
+                        : ($today > $period_end ? 'FINISHED' : 'IN_PROGRESS');
+                    $is_open = ($period_status === 'IN_PROGRESS');
+                    $status_class = $period_status === 'FINISHED' ? 'closed' : strtolower(str_replace('_', '-', $period_status));
                     ?>
                     <div class="col-12 col-md-6">
                         <div class="mn-period-card">
@@ -372,15 +408,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_period'])) {
                                         ?>
                                     </span>
                                 </div>
-                                <span class="mn-period-status<?php echo $is_open ? '' : ' closed'; ?>">
+                                <span class="mn-period-status <?php echo $status_class; ?>">
                                     Status:
                                     <?php
 
-                                    if (htmlspecialchars($period['status']) === 'IN_PROGRESS') {
-                                        echo 'In Progress';
-                                    } else {
-                                        echo 'Closed';
-                                    }
+                                    echo $period_status === 'IN_PROGRESS'
+                                        ? 'In Progress'
+                                        : ($period_status === 'NOT_STARTED' ? 'Not Started' : 'Closed');
 
                                     ?>
                                 </span>
@@ -434,6 +468,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_period'])) {
                 </div>
                 <form method="POST" class="mn-period-form">
                     <div class="modal-body">
+                        <?php if ($form_error !== ''): ?>
+                            <div class="alert alert-danger" role="alert">
+                                <?php echo htmlspecialchars($form_error); ?>
+                            </div>
+                        <?php endif; ?>
                         <div class="mb-3">
                             <label for="periodName" class="form-label">
                                 Period name
@@ -564,6 +603,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_period'])) {
 
     <!-- Flatpickr -->
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+
+    <?php if ($form_error !== ''): ?>
+        <script>
+            document.addEventListener('DOMContentLoaded', function () {
+                bootstrap.Modal.getOrCreateInstance(document.getElementById('newPeriodModal')).show();
+            });
+        </script>
+    <?php endif; ?>
 
     <script>
         (function () {

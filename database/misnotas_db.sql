@@ -140,6 +140,7 @@ CREATE TABLE `users` (
 --
 ALTER TABLE `academic_period`
   ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `uq_academic_period_name` (`name`),
   ADD KEY `fk_user` (`user_id`);
 
 --

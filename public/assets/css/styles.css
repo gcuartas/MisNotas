@@ -308,6 +308,13 @@ body {
   color: rgba(255, 255, 255, 0.55);
 }
 
+.mn-period-status.not-started {
+  background: rgba(101, 214, 255, 0.12);
+  border-color: rgba(101, 214, 255, 0.25);
+
+  color: #65D6FF;
+}
+
 
 /* Subjects */
 
