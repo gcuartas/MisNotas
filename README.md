@@ -11,3 +11,4 @@ _**Currently in development**_
 1. SRS done: August 17th, 2026
 2. Dashboard design done: August 20th, 2026
 3. Database structure done: August 20th, 2026
+4. Academic period and subject management done: October 3rd, 2026
