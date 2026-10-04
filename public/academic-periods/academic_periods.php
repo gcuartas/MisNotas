@@ -5,8 +5,45 @@ session_start();
 require '../../app/database/database.php';
 
 $form_error = '';
+$form_modal = '';
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['create_subject'])) {
+    $period_id = filter_input(INPUT_POST, 'period_id', FILTER_VALIDATE_INT);
+    $name = trim($_POST['name'] ?? '');
+    $credits = filter_input(INPUT_POST, 'credits', FILTER_VALIDATE_INT);
+    $form_modal = 'createSubjectModal';
+
+    if (!$period_id || $name === '' || $credits === false || $credits === null || $credits < 1) {
+        $form_error = 'Please enter a subject name and a valid number of credits.';
+    } else {
+        $period_stmt = $pdo->prepare('SELECT 1 FROM academic_period WHERE id = ? LIMIT 1');
+        $period_stmt->execute([$period_id]);
+
+        if (!$period_stmt->fetchColumn()) {
+            $form_error = 'The selected academic period does not exist.';
+        } else {
+            $duplicate_stmt = $pdo->prepare(
+                'SELECT 1 FROM subjects WHERE academic_period_id = ? AND name = ? LIMIT 1'
+            );
+            $duplicate_stmt->execute([$period_id, $name]);
+
+            if ($duplicate_stmt->fetchColumn()) {
+                $form_error = 'A subject with this name already exists in this academic period.';
+            } else {
+                $insert_stmt = $pdo->prepare(
+                    'INSERT INTO subjects (academic_period_id, name, credits) VALUES (?, ?, ?)'
+                );
+                $insert_stmt->execute([$period_id, $name, $credits]);
+
+                header('Location: academic_periods.php');
+                exit;
+            }
+        }
+    }
+}
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['create_period'])) {
+    $form_modal = 'newPeriodModal';
     $name = trim($_POST['name'] ?? '');
     $start_date = $_POST['start_date'] ?? '';
     $end_date = $_POST['end_date'] ?? '';
@@ -277,7 +314,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_period'])) {
     <!-- Bootstrap 5 -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
         crossorigin="anonymous">
-
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="//cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <!-- Google Fonts: Plus Jakarta Sans -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -426,7 +464,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_period'])) {
                                     </p>
                                 <?php else: ?>
                                     <?php foreach ($period['subjects'] as $subject): ?>
-                                        <div class="mn-subject-row">
+                                        <div class="mn-subject-row align-items-center">
                                             <span class="mn-subject-name" title="<?php echo htmlspecialchars($subject['name']); ?>">
                                                 <?php echo htmlspecialchars($subject['name']); ?>
                                             </span>
@@ -439,14 +477,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_period'])) {
                                                 ?>
                                                 credits
                                             </span>
+                                            <a href="subject.php?id=<?php echo (int) $subject['id']; ?>"
+                                                class="mn-show-subject-details-btn mt-2">
+                                                Show Details
+                                            </a>
                                         </div>
                                     <?php endforeach; ?>
                                 <?php endif; ?>
                             </div>
+                            <div class=".mn-period-card-buttons d-flex mt-2 justify-content-center align-items-center">
                             <button type="button" class="mn-delete-period-btn mt-2"
                                 data-period-id="<?php echo $period['id']; ?>">
-                                <i class="bi bi-trash3"></i> Delete Period
+                                <i class="bi bi-trash-fill m-1"></i> Delete Period
                             </button>
+                            <button type="button" class="mn-add-subject-btn mt-2" data-period-id="<?php echo $period['id']; ?>">
+                                <i class="bi bi-plus m-1"></i> Add Subject
+                            </button>
+                            </div>
                         </div>
                     </div>
                 <?php endforeach; ?>
@@ -530,13 +577,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_period'])) {
                             Are you sure you want to delete this academic period?
                         </p>
                         <p class="text">
-                            This will delete: 
-                            <ul>
-                                <li>All subjects in this period</li>
-                                <li>All assessment components, groups, and assessments</li>
-                                <li>All grades associated with these assessments</li>
-                                <li>All goals associated with this period</li>
-                            </ul>
+                            This will delete:
+                        <ul>
+                            <li>All subjects in this period</li>
+                            <li>All assessment components, groups, and assessments</li>
+                            <li>All grades associated with these assessments</li>
+                            <li>All goals associated with this period</li>
+                        </ul>
                         </p>
                         <input type="hidden" name="period_id" id="deletePeriodId">
                     </div>
@@ -546,6 +593,56 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_period'])) {
                         </button>
                         <button type="submit" name="delete_period" class="mn-delete-period-btn btn-danger">
                             Delete Period
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+
+
+    <!--- Create Subject modal -->
+    <div class="modal fade mn-subject-modal" id="createSubjectModal" tabindex="-1"
+        aria-labelledby="createSubjectModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="createSubjectModalLabel">
+                        Create New Subject
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close">
+                    </button>
+                </div>
+                <form method="POST" class="mn-period-form">
+                    <div class="modal-body">
+                        <?php if ($form_error !== '' && $form_modal === 'createSubjectModal'): ?>
+                            <div class="alert alert-danger" role="alert">
+                                <?php echo htmlspecialchars($form_error); ?>
+                            </div>
+                        <?php endif; ?>
+                        <input type="hidden" name="period_id" id="subjectPeriodId">
+                        <div class="mb-3">
+                            <label for="subjectName" class="form-label">
+                                Subject name
+                            </label>
+                            <input type="text" class="form-control mn-modal-input" id="subjectName" name="name"
+                                placeholder="e.g. Mathematics" maxlength="50" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="subjectCredits" class="form-label">
+                                Credits
+                            </label>
+                            <input type="number" class="form-control mn-modal-input" id="subjectCredits" name="credits"
+                                min="1" required>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary mn-modal-cancel" data-bs-dismiss="modal">
+                            Cancel
+                        </button>
+                        <button type="submit" name="create_subject" class="btn btn-primary mn-modal-submit">
+                            Create Subject
                         </button>
                     </div>
                 </form>
@@ -604,10 +701,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_period'])) {
     <!-- Flatpickr -->
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 
-    <?php if ($form_error !== ''): ?>
+    <?php if ($form_error !== '' && $form_modal !== ''): ?>
         <script>
             document.addEventListener('DOMContentLoaded', function () {
-                bootstrap.Modal.getOrCreateInstance(document.getElementById('newPeriodModal')).show();
+                bootstrap.Modal.getOrCreateInstance(document.getElementById('<?php echo $form_modal; ?>')).show();
             });
         </script>
     <?php endif; ?>
@@ -763,7 +860,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_period'])) {
     </script>
 
     <script>
-        document.querySelectorAll('[data-period-id]').forEach(button => {
+        document.querySelectorAll('.mn-add-subject-btn').forEach(button => {
+            button.addEventListener('click', function () {
+                document.getElementById('subjectPeriodId').value = this.dataset.periodId;
+                bootstrap.Modal.getOrCreateInstance(
+                    document.getElementById('createSubjectModal')
+                ).show();
+            });
+        });
+
+        document.querySelectorAll('.mn-delete-period-btn[data-period-id]').forEach(button => {
 
             button.addEventListener('click', function () {
 

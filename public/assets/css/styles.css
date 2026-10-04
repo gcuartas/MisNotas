@@ -22,11 +22,11 @@
 *::before,
 *::after {
   box-sizing: border-box;
-  font-family: 'Plus Jakarta Sans', sans-serif;
+
 }
 
 body {
-  font-family: "Inter", sans-serif;
+  font-family: 'Plus Jakarta Sans', sans-serif;
   background-color: var(--bg);
   color: var(--text);
   margin: 0;
@@ -147,13 +147,35 @@ body {
   justify-content: center;
   padding: 0.72rem 1.15rem;
   border-radius: 15px;
-  border:none;
+  border: none;
   background: linear-gradient(135deg, #ffe167 0%, #ffcf3f 100%);
   color: #1f1c4f;
   font-size: 0.85rem;
   font-weight: 800;
   transition: transform 0.2s ease;
   overflow: hidden;
+}
+
+.mn-show-subject-details-btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.7rem;
+  border-radius: 15px;
+  border: none;
+  background: linear-gradient(135deg, #ffe167 0%, #ffcf3f 100%);
+  color: #1f1c4f;
+  font-size: 0.75rem;
+  font-weight: 700;
+  transition: transform 0.2s ease;
+  overflow: hidden;
+  text-decoration: none;
+}
+
+.mn-show-subject-details-btn:hover {
+  transform: translateY(-2px);
+  color: #1f1c4f;
 }
 
 .mn-new-academic-period-btn:hover {
@@ -161,22 +183,25 @@ body {
   color: #1f1c4f;
 }
 
-.mn-delete-period-btn {
+.mn-delete-period-btn,
+.mn-add-subject-btn {
   position: relative;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   padding: 0.75rem;
   border-radius: 15px;
-  border:none;
+  border: none;
   background: linear-gradient(135deg, #ffe167 0%, #ffcf3f 100%);
   color: #1f1c4f;
   font-size: 0.85rem;
   font-weight: 800;
   transition: transform 0.2s ease;
   overflow: hidden;
+  margin: 0.25rem;
 }
 
+.mn-add-subject-btn:hover,
 .mn-delete-period-btn:hover {
   transform: translateY(-2px);
   color: #1f1c4f;
@@ -326,6 +351,7 @@ body {
   padding-top: 0.25rem;
 }
 
+
 .mn-subject-row {
   display: flex;
   align-items: center;
@@ -349,14 +375,11 @@ body {
 
 .mn-subject-name {
   min-width: 0;
-
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-
   color: #FFFFFF;
-
-  font-size: 0.95rem;
+  font-size: 1.25rem;
 }
 
 .mn-subject-divider {
@@ -430,8 +453,162 @@ body {
   font-weight: 600;
 }
 
+/* ── Subject details ───────────────────────────────────────── */
+.mn-back-link-btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.7rem;
+  border-radius: 15px;
+  border: none;
+  background: linear-gradient(135deg, #ffe167 0%, #ffcf3f 100%);
+  color: #1f1c4f;
+  font-size: 0.75rem;
+  font-weight: 700;
+  transition: transform 0.2s ease;
+  overflow: hidden;
+  text-decoration: none;
+  gap: 0.5rem;
+}
+
+.mn-back-link-btn:hover {
+  transform: translateX(-3px);
+}
+
+.mn-subject-header {
+  position: relative;
+  overflow: hidden;
+  padding: 2rem 2.25rem;
+  border: 1px solid rgba(255, 225, 103, 0.2);
+  border-radius: 18px;
+  background: linear-gradient(145deg, #312e81 0%, #272568 100%);
+  box-shadow:
+    0 8px 24px rgba(0, 0, 0, 0.25),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+.mn-subject-header::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 4px;
+  height: 100%;
+  background: var(--accent);
+}
+
+.mn-subject-period {
+  margin: 0 0 0.5rem;
+  color: var(--accent);
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.mn-subject-title {
+  margin: 0;
+  color: var(--text);
+  font-size: clamp(1.8rem, 4vw, 2.6rem);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+}
+
+.mn-subject-header .mn-subject-credits {
+  margin: 0.6rem 0 0;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.mn-grade-card {
+  display: flex;
+  min-height: 145px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.65rem;
+  padding: 1.5rem;
+  border: 1px solid rgba(255, 225, 103, 0.15);
+  border-radius: var(--radius);
+  background: var(--bg-card);
+  box-shadow:
+    0 8px 24px rgba(0, 0, 0, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  text-align: center;
+  transition: transform 0.2s ease, border-color 0.2s ease;
+}
+
+.mn-grade-card:hover {
+  border-color: rgba(255, 225, 103, 0.4);
+  transform: translateY(-2px);
+}
+
+.mn-grade-card span {
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.mn-grade-card strong {
+  color: var(--accent);
+  font-size: 2rem;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.mn-primary-btn {
+ position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.7rem;
+  border-radius: 15px;
+  border: none;
+  background: linear-gradient(135deg, #ffe167 0%, #ffcf3f 100%);
+  color: #1f1c4f;
+  font-size: 0.75rem;
+  font-weight: 700;
+  transition: transform 0.2s ease;
+  overflow: hidden;
+  text-decoration: none;
+  gap: 0.5rem;
+}
+
+.mn-primary-btn:hover,
+.mn-primary-btn:focus-visible {
+  background: linear-gradient(135deg, #ffea8d 0%, #ffd75c 100%);
+  color: #1f1c4f;
+  transform: translateY(-2px);
+}
+
+.mn-assessment-list {
+  min-height: 120px;
+  padding: 1.5rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: var(--radius);
+  background: rgba(255, 255, 255, 0.035);
+}
+
+@media (max-width: 575.98px) {
+  .mn-subject-header {
+    padding: 1.5rem 1.25rem;
+  }
+
+  .mn-section-header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .mn-primary-btn {
+    width: 100%;
+  }
+}
+
 /* ── Modal ──────────────────────────────────────────────────── */
-.mn-period-modal .modal-content {
+.mn-period-modal .modal-content,
+.mn-subject-modal .modal-content {
   background: linear-gradient(180deg, rgba(49, 46, 129, 0.98), rgba(34, 31, 94, 0.98));
   border: 1px solid rgba(255, 225, 103, 0.25);
   border-radius: 20px;
@@ -510,7 +687,8 @@ span.flatpickr-weekday {
 }
 
 .flatpickr-current-month .flatpickr-monthDropdown-months,
-.flatpickr-current-month input.cur-year, .flatpickr-current-month:hover {
+.flatpickr-current-month input.cur-year,
+.flatpickr-current-month:hover {
   background: var(--primary) !important;
   color: var(--accent) !important;
   font-family: 'Plus Jakarta Sans', sans-serif;
